@@ -9,6 +9,12 @@ from fastapi import FastAPI, HTTPException
 
 api = FastAPI()
 
+
+@api.get("/")
+async def home():
+    return {"message": "Bienvenido a su cajero"}
+
+
 @api.post("/user/auth/")
 async def auth_user(user_in: UserIn):
 
@@ -18,9 +24,9 @@ async def auth_user(user_in: UserIn):
         raise HTTPException(status_code=404, detail="El usuario no existe")
 
     if user_in_db.password != user_in.password:
-        return  {"Autenticado": False}
+        return {"Autenticado": False}
 
-    return  {"Autenticado": True}
+    return {"Autenticado": True}
 
 
 @api.get("/user/balance/{username}")
@@ -33,7 +39,7 @@ async def get_balance(username: str):
 
     user_out = UserOut(**user_in_db.dict())
 
-    return  user_out
+    return user_out
 
 
 @api.put("/user/transaction/")
@@ -45,14 +51,16 @@ async def make_transaction(transaction_in: TransactionIn):
         raise HTTPException(status_code=404, detail="El usuario no existe")
 
     if user_in_db.balance < transaction_in.value:
-        raise HTTPException(status_code=400, detail="No se tienen los fondos suficientes")
+        raise HTTPException(
+            status_code=400, detail="No se tienen los fondos suficientes")
 
     user_in_db.balance = user_in_db.balance - transaction_in.value
     update_user(user_in_db)
 
-    transaction_in_db = TransactionInDB(**transaction_in.dict(), actual_balance = user_in_db.balance)
+    transaction_in_db = TransactionInDB(
+        **transaction_in.dict(), actual_balance=user_in_db.balance)
     transaction_in_db = save_transaction(transaction_in_db)
 
     transaction_out = TransactionOut(**transaction_in_db.dict())
 
-    return  transaction_out
+    return transaction_out
